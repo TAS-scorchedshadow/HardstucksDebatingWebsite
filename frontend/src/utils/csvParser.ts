@@ -43,7 +43,7 @@ export function parseCSV(csvContent: string): DebateRequest {
     const values = line.split(',').map(v => v.trim());
 
     if (values.length < 2) {
-      throw new Error(`Invalid row ${i + 1}: must have at least name and one preference`);
+      throw new Error(`Invalid row at line ${i + 1}: must have at least name and one preference\nLine content: "${lines[i]}"`);
     }
 
     const name = values[0];
@@ -52,13 +52,18 @@ export function parseCSV(csvContent: string): DebateRequest {
 
     if (hasGroupColumn) {
       // Last column is group, middle columns are preferences
-      preferences = values.slice(1, -1).map(v => {
-        const num = parseInt(v, 10);
-        if (isNaN(num)) {
-          throw new Error(`Invalid preference value "${v}" in row ${i + 1}`);
-        }
-        return num;
-      });
+      try {
+        preferences = values.slice(1, -1).map((v, idx) => {
+          const num = parseInt(v, 10);
+          if (isNaN(num)) {
+            throw new Error(`Invalid preference value "${v}" at column ${idx + 2}`);
+          }
+          return num;
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        throw new Error(`Error at line ${i + 1}: ${message}\nLine content: "${lines[i]}"`);
+      }
 
       const groupValue = values[values.length - 1];
       if (groupValue && groupValue.length > 0) {
@@ -66,13 +71,18 @@ export function parseCSV(csvContent: string): DebateRequest {
       }
     } else {
       // All columns after name are preferences
-      preferences = values.slice(1).map(v => {
-        const num = parseInt(v, 10);
-        if (isNaN(num)) {
-          throw new Error(`Invalid preference value "${v}" in row ${i + 1}`);
-        }
-        return num;
-      });
+      try {
+        preferences = values.slice(1).map((v, idx) => {
+          const num = parseInt(v, 10);
+          if (isNaN(num)) {
+            throw new Error(`Invalid preference value "${v}" at column ${idx + 2}`);
+          }
+          return num;
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        throw new Error(`Error at line ${i + 1}: ${message}\nLine content: "${lines[i]}"`);
+      }
     }
 
     participants.push({

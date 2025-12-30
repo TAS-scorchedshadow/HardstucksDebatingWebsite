@@ -9,6 +9,7 @@ debating_algo_path = (
 sys.path.insert(0, str(debating_algo_path))
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 
@@ -20,6 +21,15 @@ from hardstucks_debating.formats.traditional_ga import (
 )
 
 app = FastAPI()
+
+# Configure CORS for local development
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://localhost:3000"],  # Vite default port and common React port
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 class Participant(BaseModel):

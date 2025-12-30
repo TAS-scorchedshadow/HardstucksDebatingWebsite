@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+import asyncio
 
 # Add the DebatingAlgorithm src directory to Python path
 debating_algo_path = (
@@ -121,15 +122,25 @@ async def run_bp_group_aware(request: DebateRequest):
             for p in request.participants
         ]
 
-        # Run algorithm
-        strategy = BritishParliamentaryGroupAware()
-        G = strategy.build_graph(person_data)
-        resG = G.cycleCancel(0, len(G.graph) - 1)
-        rooms = strategy.generate_rooms(resG, len(person_data), person_data)
+        # Run algorithm with timeout (60 seconds)
+        def run_algorithm():
+            strategy = BritishParliamentaryGroupAware()
+            G = strategy.build_graph(person_data)
+            resG = G.cycleCancel(0, len(G.graph) - 1)
+            return strategy.generate_rooms(resG, len(person_data), person_data)
+
+        loop = asyncio.get_event_loop()
+        rooms = await asyncio.wait_for(
+            loop.run_in_executor(None, run_algorithm), timeout=60.0
+        )
 
         # Convert rooms to response format
         return convert_rooms_to_response(rooms, len(person_data))
 
+    except asyncio.TimeoutError:
+        raise HTTPException(
+            status_code=504, detail="Algorithm execution timed out after 60 seconds"
+        )
     except Exception as e:
         raise HTTPException(
             status_code=400, detail=f"Error processing request: {str(e)}"
@@ -165,15 +176,25 @@ async def run_traditional_group_aware(request: DebateRequest):
             for p in request.participants
         ]
 
-        # Run algorithm
-        strategy = TraditionalGroupAware()
-        G = strategy.build_graph(person_data)
-        resG = G.cycleCancel(0, len(G.graph) - 1)
-        rooms = strategy.generate_rooms(resG, len(person_data), person_data)
+        # Run algorithm with timeout (60 seconds)
+        def run_algorithm():
+            strategy = TraditionalGroupAware()
+            G = strategy.build_graph(person_data)
+            resG = G.cycleCancel(0, len(G.graph) - 1)
+            return strategy.generate_rooms(resG, len(person_data), person_data)
+
+        loop = asyncio.get_event_loop()
+        rooms = await asyncio.wait_for(
+            loop.run_in_executor(None, run_algorithm), timeout=60.0
+        )
 
         # Convert rooms to response format
         return convert_rooms_to_response(rooms, len(person_data))
 
+    except asyncio.TimeoutError:
+        raise HTTPException(
+            status_code=504, detail="Algorithm execution timed out after 60 seconds"
+        )
     except Exception as e:
         raise HTTPException(
             status_code=400, detail=f"Error processing request: {str(e)}"

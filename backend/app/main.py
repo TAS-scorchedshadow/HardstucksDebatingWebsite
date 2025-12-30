@@ -2,7 +2,9 @@ import sys
 from pathlib import Path
 
 # Add the DebatingAlgorithm src directory to Python path
-debating_algo_path = Path(__file__).parent.parent / "my_packages" / "DebatingAlgorithm" / "src"
+debating_algo_path = (
+    Path(__file__).parent.parent / "my_packages" / "DebatingAlgorithm" / "src"
+)
 sys.path.insert(0, str(debating_algo_path))
 
 from fastapi import FastAPI, HTTPException
@@ -47,12 +49,50 @@ class DebateResponse(BaseModel):
     average_preference: float
 
 
+def convert_rooms_to_response(rooms, num_participants: int) -> DebateResponse:
+    """
+    Convert algorithm output rooms to API response format.
+
+    Args:
+        rooms: List of Room namedtuples from the algorithm
+        num_participants: Total number of participants
+
+    Returns:
+        DebateResponse with formatted rooms and statistics
+    """
+    total_pref = 0
+    response_rooms = []
+
+    for room in rooms:
+        assignments = []
+        for assignment in room.assignments:
+            assignments.append(
+                Assignment(
+                    name=assignment[0],
+                    role=assignment[1],
+                    preference=assignment[2],
+                    group=assignment[3],
+                )
+            )
+            total_pref += assignment[2]
+
+        response_rooms.append(Room(name=room.name, assignments=assignments))
+
+    avg_pref = round(total_pref / num_participants, 3) if num_participants else 0
+
+    return DebateResponse(
+        rooms=response_rooms,
+        total_preference=total_pref,
+        average_preference=avg_pref,
+    )
+
+
 @app.get("/")
 async def root():
     return {"message": "Hello Bigger Applications!"}
 
 
-@app.post("/run-bp-group-aware", response_model=DebateResponse)
+@app.post("/bp", response_model=DebateResponse)
 async def run_bp_group_aware(request: DebateRequest):
     """
     Run British Parliamentary Group Aware algorithm.
@@ -88,30 +128,7 @@ async def run_bp_group_aware(request: DebateRequest):
         rooms = strategy.generate_rooms(resG, len(person_data), person_data)
 
         # Convert rooms to response format
-        total_pref = 0
-        response_rooms = []
-        for room in rooms:
-            assignments = []
-            for assignment in room.assignments:
-                assignments.append(
-                    Assignment(
-                        name=assignment[0],
-                        role=assignment[1],
-                        preference=assignment[2],
-                        group=assignment[3],
-                    )
-                )
-                total_pref += assignment[2]
-
-            response_rooms.append(Room(name=room.name, assignments=assignments))
-
-        avg_pref = round(total_pref / len(person_data), 3) if person_data else 0
-
-        return DebateResponse(
-            rooms=response_rooms,
-            total_preference=total_pref,
-            average_preference=avg_pref,
-        )
+        return convert_rooms_to_response(rooms, len(person_data))
 
     except Exception as e:
         raise HTTPException(
@@ -119,7 +136,7 @@ async def run_bp_group_aware(request: DebateRequest):
         )
 
 
-@app.post("/run-traditional-group-aware", response_model=DebateResponse)
+@app.post("/traditional", response_model=DebateResponse)
 async def run_traditional_group_aware(request: DebateRequest):
     """
     Run Traditional Group Aware algorithm.
@@ -155,30 +172,7 @@ async def run_traditional_group_aware(request: DebateRequest):
         rooms = strategy.generate_rooms(resG, len(person_data), person_data)
 
         # Convert rooms to response format
-        total_pref = 0
-        response_rooms = []
-        for room in rooms:
-            assignments = []
-            for assignment in room.assignments:
-                assignments.append(
-                    Assignment(
-                        name=assignment[0],
-                        role=assignment[1],
-                        preference=assignment[2],
-                        group=assignment[3],
-                    )
-                )
-                total_pref += assignment[2]
-
-            response_rooms.append(Room(name=room.name, assignments=assignments))
-
-        avg_pref = round(total_pref / len(person_data), 3) if person_data else 0
-
-        return DebateResponse(
-            rooms=response_rooms,
-            total_preference=total_pref,
-            average_preference=avg_pref,
-        )
+        return convert_rooms_to_response(rooms, len(person_data))
 
     except Exception as e:
         raise HTTPException(

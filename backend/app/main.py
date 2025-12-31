@@ -21,8 +21,7 @@ app = FastAPI()
 
 # Get allowed origins from environment variable or use defaults
 ALLOWED_ORIGINS = os.getenv(
-    "ALLOWED_ORIGINS",
-    "http://localhost:5173,http://localhost:3000"
+    "ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000"
 ).split(",")
 
 # Get algorithm timeout from environment variable or use default (60 seconds)
@@ -128,7 +127,6 @@ async def run_bp_group_aware(request: DebateRequest):
     Returns: JSON with room assignments and statistics
     """
     try:
-        # Convert Pydantic models to dict format expected by algorithm
         person_data = [
             {
                 "name": p.name,
@@ -138,7 +136,6 @@ async def run_bp_group_aware(request: DebateRequest):
             for p in request.participants
         ]
 
-        # Run algorithm with timeout
         def run_algorithm():
             strategy = BritishParliamentaryGroupAware()
             G = strategy.build_graph(person_data)
@@ -150,12 +147,12 @@ async def run_bp_group_aware(request: DebateRequest):
             loop.run_in_executor(None, run_algorithm), timeout=ALGORITHM_TIMEOUT
         )
 
-        # Convert rooms to response format
         return convert_rooms_to_response(rooms, len(person_data))
 
     except asyncio.TimeoutError:
         raise HTTPException(
-            status_code=504, detail=f"Algorithm execution timed out after {ALGORITHM_TIMEOUT} seconds"
+            status_code=504,
+            detail=f"Algorithm execution timed out after {ALGORITHM_TIMEOUT} seconds",
         )
     except Exception as e:
         raise HTTPException(
@@ -182,7 +179,6 @@ async def run_traditional_group_aware(request: DebateRequest):
     Returns: JSON with room assignments and statistics
     """
     try:
-        # Convert Pydantic models to dict format expected by algorithm
         person_data = [
             {
                 "name": p.name,
@@ -204,12 +200,12 @@ async def run_traditional_group_aware(request: DebateRequest):
             loop.run_in_executor(None, run_algorithm), timeout=ALGORITHM_TIMEOUT
         )
 
-        # Convert rooms to response format
         return convert_rooms_to_response(rooms, len(person_data))
 
     except asyncio.TimeoutError:
         raise HTTPException(
-            status_code=504, detail=f"Algorithm execution timed out after {ALGORITHM_TIMEOUT} seconds"
+            status_code=504,
+            detail=f"Algorithm execution timed out after {ALGORITHM_TIMEOUT} seconds",
         )
     except Exception as e:
         raise HTTPException(

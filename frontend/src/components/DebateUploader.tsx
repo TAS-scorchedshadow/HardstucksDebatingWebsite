@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { parseCSVFile, type DebateRequest } from "../utils/csvParser";
-import { parseExcelFile } from "../utils/excelParser";
+import { parseCSVFile, type DebateRequest } from "../utils/parsers/csvParser";
+import { parseExcelFile } from "../utils/parsers/excelParser";
 import DebateResults from "./DebateResults";
 import FormatExamples from "./FormatExamples";
 
@@ -47,27 +47,26 @@ async function submitDebateRequest(
 export default function DebateUploader() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [format, setFormat] = useState<DebateFormat | null>(null);
-  const [detectedPreferencesLength, setDetectedPreferencesLength] = useState<
-    number | null
-  >(null);
   const [fileError, setFileError] = useState<string | null>(null);
+  const [parsedData, setParsedData] = useState<DebateRequest | null>(null);
+
+  // Recalculate preferences length based on parsed data
+  const detectedPreferencesLength =
+    parsedData && parsedData.participants.length > 0
+      ? parsedData.participants[0].preferences.length
+      : null;
 
   const mutation = useMutation({
     mutationFn: async () => {
-      if (!selectedFile) {
+      if (!parsedData) {
         throw new Error("Please select a file");
       }
       if (!format) {
         throw new Error("Please select a valid debate format");
       }
 
-      // Determine file type and parse accordingly
-      const isExcel = selectedFile.name.match(/\.(xlsx|xls|xlsm|xlsb)$/i);
-      const debateRequest = isExcel
-        ? await parseExcelFile(selectedFile)
-        : await parseCSVFile(selectedFile);
-
-      return submitDebateRequest(format, debateRequest);
+      // Use the already parsed data from state instead of reparsing
+      return submitDebateRequest(format, parsedData);
     },
   });
 
@@ -78,6 +77,7 @@ export default function DebateUploader() {
     if (file) {
       setSelectedFile(file);
       setFileError(null);
+      setParsedData(null);
       mutation.reset();
 
       // Auto-detect format based on preferences length
@@ -88,10 +88,12 @@ export default function DebateUploader() {
           ? await parseExcelFile(file)
           : await parseCSVFile(file);
 
+        // Store parsed data in state to avoid reparsing
+        setParsedData(debateRequest);
+
         if (debateRequest.participants.length > 0) {
           const preferencesLength =
             debateRequest.participants[0].preferences.length;
-          setDetectedPreferencesLength(preferencesLength);
 
           if (preferencesLength === 8) {
             setFormat("bp");
@@ -105,7 +107,7 @@ export default function DebateUploader() {
           }
         }
       } catch (error) {
-        setDetectedPreferencesLength(null);
+        setParsedData(null);
         setFormat(null);
         setFileError(
           error instanceof Error ? error.message : "Error parsing file"
@@ -187,7 +189,7 @@ export default function DebateUploader() {
         <button
           type="submit"
           disabled={
-            !selectedFile || !format || mutation.isPending || fileError !== null
+            !parsedData || !format || mutation.isPending || fileError !== null
           }
           className="w-full bg-blue-500 dark:bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-600 dark:hover:bg-blue-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed transition-colors cursor-pointer"
         >

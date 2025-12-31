@@ -2,8 +2,8 @@
  * Excel Parser utility for debate participant data
  */
 
-import * as XLSX from 'xlsx';
-import { parseRows, type DebateRequest } from './csvParser';
+import * as XLSX from "xlsx";
+import { parseRows, type DebateRequest } from "./parser";
 
 /**
  * Parse Excel file content into JSON format for backend
@@ -19,7 +19,7 @@ export function parseExcel(workbook: XLSX.WorkBook): DebateRequest {
   // Get the first worksheet
   const sheetName = workbook.SheetNames[0];
   if (!sheetName) {
-    throw new Error('Excel file must have at least one worksheet');
+    throw new Error("Excel file must have at least one worksheet");
   }
 
   const worksheet = workbook.Sheets[sheetName];
@@ -28,8 +28,8 @@ export function parseExcel(workbook: XLSX.WorkBook): DebateRequest {
   const data: unknown[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
   // Convert to string arrays for parseRows
-  const rows = data.map(row =>
-    (row as unknown[]).map(v => String(v ?? ''))
+  const rows = data.map((row) =>
+    (row as unknown[]).map((v) => String(v ?? ""))
   );
 
   return parseRows(rows);
@@ -50,12 +50,12 @@ export function readFileAsArrayBuffer(file: File): Promise<ArrayBuffer> {
       if (content instanceof ArrayBuffer) {
         resolve(content);
       } else {
-        reject(new Error('Failed to read file as ArrayBuffer'));
+        reject(new Error("Failed to read file as ArrayBuffer"));
       }
     };
 
     reader.onerror = () => {
-      reject(new Error('Error reading file'));
+      reject(new Error("Error reading file"));
     };
 
     reader.readAsArrayBuffer(file);
@@ -69,15 +69,19 @@ export function readFileAsArrayBuffer(file: File): Promise<ArrayBuffer> {
  * @returns Promise resolving to parsed debate request
  */
 export async function parseExcelFile(file: File): Promise<DebateRequest> {
-  const validExtensions = ['.xlsx', '.xls', '.xlsm', '.xlsb'];
-  const hasValidExtension = validExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
+  const validExtensions = [".xlsx", ".xls", ".xlsm", ".xlsb"];
+  const hasValidExtension = validExtensions.some((ext) =>
+    file.name.toLowerCase().endsWith(ext)
+  );
 
   if (!hasValidExtension) {
-    throw new Error('File must be an Excel file (.xlsx, .xls, .xlsm, or .xlsb)');
+    throw new Error(
+      "File must be an Excel file (.xlsx, .xls, .xlsm, or .xlsb)"
+    );
   }
 
   const arrayBuffer = await readFileAsArrayBuffer(file);
-  const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+  const workbook = XLSX.read(arrayBuffer, { type: "array" });
 
   return parseExcel(workbook);
 }
@@ -103,24 +107,24 @@ export function downloadExcel(
   const data: unknown[][] = [];
 
   // Add header
-  data.push(['Name', 'Role', 'Preference', 'Group']);
+  data.push(["Name", "Role", "Preference", "Group"]);
 
   // Add room assignments
   for (const room of rooms) {
     // Add room name as a merged row
-    data.push([room.name, '', '', '']);
+    data.push([room.name, "", "", ""]);
 
     for (const assignment of room.assignments) {
       data.push([
         assignment.name,
         assignment.role,
         assignment.preference,
-        assignment.group || '',
+        assignment.group || "",
       ]);
     }
 
     // Empty row between rooms
-    data.push(['', '', '', '']);
+    data.push(["", "", "", ""]);
   }
 
   // Create worksheet
@@ -128,7 +132,7 @@ export function downloadExcel(
 
   // Create workbook
   const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Room Assignments');
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Room Assignments");
 
   // Download file
   XLSX.writeFile(workbook, filename);

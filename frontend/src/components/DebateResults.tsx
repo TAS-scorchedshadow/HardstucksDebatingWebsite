@@ -1,5 +1,5 @@
-import { convertResultsToCSV, downloadCSV } from "../utils/csvParser";
-import { downloadExcel } from "../utils/excelParser";
+import { convertResultsToCSV, downloadCSV } from "../utils/parsers/csvParser";
+import { downloadExcel } from "../utils/parsers/excelParser";
 import { RiFileExcel2Fill } from "react-icons/ri";
 import DownloadCSVButton from "./DownloadCSVButton";
 

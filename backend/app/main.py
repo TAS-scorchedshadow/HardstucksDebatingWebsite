@@ -25,6 +25,9 @@ ALLOWED_ORIGINS = os.getenv(
     "http://localhost:5173,http://localhost:3000"
 ).split(",")
 
+# Get algorithm timeout from environment variable or use default (60 seconds)
+ALGORITHM_TIMEOUT = float(os.getenv("ALGORITHM_TIMEOUT", "60"))
+
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
@@ -135,7 +138,7 @@ async def run_bp_group_aware(request: DebateRequest):
             for p in request.participants
         ]
 
-        # Run algorithm with timeout (60 seconds)
+        # Run algorithm with timeout
         def run_algorithm():
             strategy = BritishParliamentaryGroupAware()
             G = strategy.build_graph(person_data)
@@ -144,7 +147,7 @@ async def run_bp_group_aware(request: DebateRequest):
 
         loop = asyncio.get_event_loop()
         rooms = await asyncio.wait_for(
-            loop.run_in_executor(None, run_algorithm), timeout=60.0
+            loop.run_in_executor(None, run_algorithm), timeout=ALGORITHM_TIMEOUT
         )
 
         # Convert rooms to response format
@@ -152,7 +155,7 @@ async def run_bp_group_aware(request: DebateRequest):
 
     except asyncio.TimeoutError:
         raise HTTPException(
-            status_code=504, detail="Algorithm execution timed out after 60 seconds"
+            status_code=504, detail=f"Algorithm execution timed out after {ALGORITHM_TIMEOUT} seconds"
         )
     except Exception as e:
         raise HTTPException(
@@ -189,7 +192,7 @@ async def run_traditional_group_aware(request: DebateRequest):
             for p in request.participants
         ]
 
-        # Run algorithm with timeout (60 seconds)
+        # Run algorithm with timeout
         def run_algorithm():
             strategy = TraditionalGroupAware()
             G = strategy.build_graph(person_data)
@@ -198,7 +201,7 @@ async def run_traditional_group_aware(request: DebateRequest):
 
         loop = asyncio.get_event_loop()
         rooms = await asyncio.wait_for(
-            loop.run_in_executor(None, run_algorithm), timeout=60.0
+            loop.run_in_executor(None, run_algorithm), timeout=ALGORITHM_TIMEOUT
         )
 
         # Convert rooms to response format
@@ -206,7 +209,7 @@ async def run_traditional_group_aware(request: DebateRequest):
 
     except asyncio.TimeoutError:
         raise HTTPException(
-            status_code=504, detail="Algorithm execution timed out after 60 seconds"
+            status_code=504, detail=f"Algorithm execution timed out after {ALGORITHM_TIMEOUT} seconds"
         )
     except Exception as e:
         raise HTTPException(

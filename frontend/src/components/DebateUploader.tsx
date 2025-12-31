@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { parseCSVFile, type DebateRequest } from "../utils/parsers/csvParser";
+import { parseCSVFile } from "../utils/parsers/csvParser";
 import { parseExcelFile } from "../utils/parsers/excelParser";
 import DebateResults from "./DebateResults";
 import FormatExamples from "./FormatExamples";
+import type { DebateRequest } from "../utils/parsers/parser";
 
 interface DebateResponse {
   rooms: Array<{

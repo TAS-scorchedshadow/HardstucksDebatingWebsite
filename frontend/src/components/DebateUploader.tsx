@@ -26,16 +26,15 @@ async function submitDebateRequest(
   debateRequest: DebateRequest
 ): Promise<DebateResponse> {
   const endpoint = format === "bp" ? "/bp" : "/traditional";
-  const response = await fetch(
-    `${import.meta.env.VITE_BACKEND_URL}${endpoint}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(debateRequest),
-    }
-  );
+  const BE_URL = import.meta.env.VITE_BACKEND_URL;
+  console.log(BE_URL);
+  const response = await fetch(`${BE_URL}${endpoint}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(debateRequest),
+  });
 
   if (!response.ok) {
     const errorData = await response.json();

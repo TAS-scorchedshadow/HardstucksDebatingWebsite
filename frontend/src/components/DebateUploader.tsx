@@ -125,14 +125,17 @@ export default function DebateUploader() {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-gray-100">
-        Debate Room Assignment
+      <h1 className="text-4xl font-bold mb-6 text-gray-900 dark:text-gray-100">
+        Goose Debating
       </h1>
+      <h2 className="text-2xl font-bold mb-6 text-gray-800 dark:text-gray-200">
+        Get debates running quickly!
+      </h2>
 
       <form onSubmit={handleSubmit} className="space-y-4 mb-8">
         <div>
           <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-            Upload CSV or Excel File
+            Upload a CSV or Excel File to get started
           </label>
           <input
             type="file"

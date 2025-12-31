@@ -1,5 +1,7 @@
 import { convertResultsToCSV, downloadCSV } from "../utils/csvParser";
 import { downloadExcel } from "../utils/excelParser";
+import { RiFileExcel2Fill } from "react-icons/ri";
+import DownloadCSVButton from "./DownloadCSVButton";
 
 interface Assignment {
   name: string;
@@ -66,16 +68,14 @@ export default function DebateResults({ data, format }: DebateResultsProps) {
           Results
         </h2>
         <div className="flex gap-2">
-          <button
-            onClick={handleDownloadCSV}
-            className="bg-green-600 dark:bg-green-700 text-white py-2 px-4 rounded-md hover:bg-green-700 dark:hover:bg-green-800 transition-colors"
-          >
+          <DownloadCSVButton onClick={handleDownloadCSV}>
             Download CSV
-          </button>
+          </DownloadCSVButton>
           <button
             onClick={handleDownloadExcel}
-            className="bg-blue-600 dark:bg-blue-700 text-white py-2 px-4 rounded-md hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors"
+            className="flex items-center gap-2 bg-emerald-600 dark:bg-emerald-700 text-white py-2 px-4 rounded-md hover:bg-emerald-700 dark:hover:bg-emerald-800 transition-colors"
           >
+            <RiFileExcel2Fill className="text-lg" />
             Download Excel
           </button>
         </div>

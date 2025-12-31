@@ -1,4 +1,5 @@
 // Example data for debate formats
+import DownloadCSVButton from "./DownloadCSVButton";
 
 // Traditional format example
 const traditionalExample = {
@@ -77,12 +78,11 @@ function ExampleTable({ title, exampleData, filename }: ExampleTableProps) {
         <h3 className="font-semibold text-gray-900 dark:text-gray-100">
           {title}
         </h3>
-        <button
+        <DownloadCSVButton
           onClick={() => handleDownloadCSV(exampleData, filename)}
-          className="text-sm bg-gray-600 dark:bg-gray-700 text-white py-1 px-3 rounded-md hover:bg-gray-700 dark:hover:bg-gray-600 transition-colors"
         >
           Download Example CSV
-        </button>
+        </DownloadCSVButton>
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm border-collapse">
@@ -172,6 +172,16 @@ export default function FormatExamples() {
             with availabilties
           </li>
         </ul>
+      </div>
+      <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
+        <h3 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">
+          Notes on Use
+        </h3>
+        <p className="text-sm">
+          ChatGPT or other generative AI tools can help format an existing
+          spreadsheet to the required format! Adding the example files to the
+          chat will help.
+        </p>
       </div>
     </div>
   );

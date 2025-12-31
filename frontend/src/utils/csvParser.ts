@@ -2,6 +2,8 @@
  * CSV Parser utility for debate participant data
  */
 
+import { parse } from 'csv-parse/browser/esm/sync';
+
 export interface Participant {
   name: string;
   preferences: number[];
@@ -134,13 +136,19 @@ export function parseRows(rows: string[][]): DebateRequest {
  * Expected CSV format:
  * - First row: Headers (Name, role1, role2, ..., Group [optional])
  * - Subsequent rows: participant data
+ * - Handles quoted fields with commas properly
  *
  * @param csvContent - Raw CSV file content as string
  * @returns Parsed debate request object
  */
 export function parseCSV(csvContent: string): DebateRequest {
-  const lines = csvContent.trim().split("\n");
-  const rows = lines.map((line) => line.split(","));
+  // Use csv-parse to handle quoted fields, commas, and escape sequences
+  const rows = parse(csvContent, {
+    skip_empty_lines: true,
+    trim: true,
+    relax_quotes: true,
+  }) as string[][];
+
   return parseRows(rows);
 }
 

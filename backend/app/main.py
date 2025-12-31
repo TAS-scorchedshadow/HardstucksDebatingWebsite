@@ -1,12 +1,6 @@
-import sys
-from pathlib import Path
 import asyncio
-
-# Add the DebatingAlgorithm src directory to Python path
-debating_algo_path = (
-    Path(__file__).parent.parent / "my_packages" / "DebatingAlgorithm" / "src"
-)
-sys.path.insert(0, str(debating_algo_path))
+import os
+from dotenv import load_dotenv
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,12 +14,21 @@ from hardstucks_debating.formats.traditional_ga import (
     TraditionalGroupAware,
 )
 
+# Load environment variables
+load_dotenv()
+
 app = FastAPI()
 
-# Configure CORS for local development
+# Get allowed origins from environment variable or use defaults
+ALLOWED_ORIGINS = os.getenv(
+    "ALLOWED_ORIGINS",
+    "http://localhost:5173,http://localhost:3000"
+).split(",")
+
+# Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],  # Vite default port and common React port
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

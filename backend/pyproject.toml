@@ -1,14 +1,20 @@
 [project]
 name = "backend"
 version = "0.1.0"
-description = "Add your description here"
+description = "Debate room assignment API"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi[standard]>=0.128.0",
+    "hardstucks-debating",
+    "python-dotenv>=1.0.0",
 ]
+
+[tool.uv.sources]
+hardstucks-debating = { workspace = true }
 
 [tool.uv.workspace]
 members = [
     "example-app",
+    "my_packages/DebatingAlgorithm",
 ]

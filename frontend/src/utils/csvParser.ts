@@ -13,37 +13,35 @@ export interface DebateRequest {
 }
 
 /**
- * Parse CSV file content into JSON format for backend
+ * Parse rows of data into DebateRequest format
  *
- * Expected CSV format:
- * - First row: Headers (Name, role1, role2, ..., Group [optional])
- * - Subsequent rows: participant data
- *
- * @param csvContent - Raw CSV file content as string
+ * @param rows - Array of row data (first row is headers, rest are data)
  * @returns Parsed debate request object
  */
-export function parseCSV(csvContent: string): DebateRequest {
-  const lines = csvContent.trim().split('\n');
-
-  if (lines.length < 2) {
-    throw new Error('CSV file must have at least a header row and one data row');
+export function parseRows(rows: string[][]): DebateRequest {
+  if (rows.length < 2) {
+    throw new Error("Data must have at least a header row and one data row");
   }
 
   // Parse header to check for "Group" column
-  const headers = lines[0].split(',').map(h => h.trim());
-  const hasGroupColumn = headers[headers.length - 1].toLowerCase() === 'group';
+  const headers = rows[0].map((h) => h.trim());
+  const hasGroupColumn = headers[headers.length - 1].toLowerCase() === "group";
 
   const participants: Participant[] = [];
 
   // Parse data rows (skip header)
-  for (let i = 1; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line) continue; // Skip empty lines
+  for (let i = 1; i < rows.length; i++) {
+    const values = rows[i].map((v) => v.trim());
 
-    const values = line.split(',').map(v => v.trim());
+    // Skip empty rows
+    if (values.length === 0 || !values[0]) continue;
 
     if (values.length < 2) {
-      throw new Error(`Invalid row at line ${i + 1}: must have at least name and one preference\nLine content: "${lines[i]}"`);
+      throw new Error(
+        `Invalid row at line ${
+          i + 1
+        }: must have at least name and one preference\nLine content: "${values.join(", ")}"`
+      );
     }
 
     const name = values[0];
@@ -53,35 +51,66 @@ export function parseCSV(csvContent: string): DebateRequest {
     if (hasGroupColumn) {
       // Last column is group, middle columns are preferences
       try {
-        preferences = values.slice(1, -1).map((v, idx) => {
+        const prefStrings = values.slice(1, -1);
+        const tempPreferences: (number | null)[] = prefStrings.map((v, idx) => {
+          if (v === "") {
+            return null; // Missing preference - will fill in later
+          }
           const num = parseInt(v, 10);
           if (isNaN(num)) {
-            throw new Error(`Invalid preference value "${v}" at column ${idx + 2}`);
+            throw new Error(
+              `Invalid preference value "${v}" at column ${idx + 2}`
+            );
           }
           return num;
         });
+
+        // Fill in missing preferences with max + 1
+        const validPrefs = tempPreferences.filter((p): p is number => p !== null);
+        const fillValue = validPrefs.length > 0 ? Math.max(...validPrefs) + 1 : 1;
+        preferences = tempPreferences.map((p) => (p !== null ? p : fillValue));
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unknown error';
-        throw new Error(`Error at line ${i + 1}: ${message}\nLine content: "${lines[i]}"`);
+        const message =
+          error instanceof Error ? error.message : "Unknown error";
+        throw new Error(
+          `Error at line ${i + 1}: ${message}\nLine content: "${values.join(", ")}"`
+        );
       }
 
       const groupValue = values[values.length - 1];
       if (groupValue && groupValue.length > 0) {
-        group = groupValue.split(';').map(g => g.trim()).filter(g => g.length > 0);
+        group = groupValue
+          .split(";")
+          .map((g) => g.trim())
+          .filter((g) => g.length > 0);
       }
     } else {
       // All columns after name are preferences
       try {
-        preferences = values.slice(1).map((v, idx) => {
+        const prefStrings = values.slice(1);
+        const tempPreferences: (number | null)[] = prefStrings.map((v, idx) => {
+          if (v === "") {
+            return null; // Missing preference - will fill in later
+          }
           const num = parseInt(v, 10);
           if (isNaN(num)) {
-            throw new Error(`Invalid preference value "${v}" at column ${idx + 2}`);
+            throw new Error(
+              `Invalid preference value "${v}" at column ${idx + 2}`
+            );
           }
           return num;
         });
+
+        // Fill in missing preferences with max + 1
+        const validPrefs = tempPreferences.filter((p): p is number => p !== null);
+        const fillValue = validPrefs.length > 0 ? Math.max(...validPrefs) + 1 : 1;
+        preferences = tempPreferences.map((p) => (p !== null ? p : fillValue));
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unknown error';
-        throw new Error(`Error at line ${i + 1}: ${message}\nLine content: "${lines[i]}"`);
+        const message =
+          error instanceof Error ? error.message : "Unknown error";
+        throw new Error(
+          `Error at line ${i + 1}: ${message}\nLine content: "${values.join(", ")}"`
+        );
       }
     }
 
@@ -93,10 +122,26 @@ export function parseCSV(csvContent: string): DebateRequest {
   }
 
   if (participants.length === 0) {
-    throw new Error('No valid participants found in CSV');
+    throw new Error("No valid participants found in data");
   }
 
   return { participants };
+}
+
+/**
+ * Parse CSV file content into JSON format for backend
+ *
+ * Expected CSV format:
+ * - First row: Headers (Name, role1, role2, ..., Group [optional])
+ * - Subsequent rows: participant data
+ *
+ * @param csvContent - Raw CSV file content as string
+ * @returns Parsed debate request object
+ */
+export function parseCSV(csvContent: string): DebateRequest {
+  const lines = csvContent.trim().split("\n");
+  const rows = lines.map((line) => line.split(","));
+  return parseRows(rows);
 }
 
 /**
@@ -111,15 +156,15 @@ export function readFileAsText(file: File): Promise<string> {
 
     reader.onload = (event) => {
       const content = event.target?.result;
-      if (typeof content === 'string') {
+      if (typeof content === "string") {
         resolve(content);
       } else {
-        reject(new Error('Failed to read file as text'));
+        reject(new Error("Failed to read file as text"));
       }
     };
 
     reader.onerror = () => {
-      reject(new Error('Error reading file'));
+      reject(new Error("Error reading file"));
     };
 
     reader.readAsText(file);
@@ -133,8 +178,8 @@ export function readFileAsText(file: File): Promise<string> {
  * @returns Promise resolving to parsed debate request
  */
 export async function parseCSVFile(file: File): Promise<DebateRequest> {
-  if (!file.name.endsWith('.csv')) {
-    throw new Error('File must be a CSV file');
+  if (!file.name.endsWith(".csv")) {
+    throw new Error("File must be a CSV file");
   }
 
   const content = await readFileAsText(file);
@@ -150,14 +195,20 @@ export async function parseCSVFile(file: File): Promise<DebateRequest> {
  * @returns CSV content as string
  */
 export function convertResultsToCSV(
-  rooms: Array<{ name: string; assignments: Array<{ name: string; role: string; preference: number; group: string }> }>,
-  totalPreference: number,
-  averagePreference: number
+  rooms: Array<{
+    name: string;
+    assignments: Array<{
+      name: string;
+      role: string;
+      preference: number;
+      group: string;
+    }>;
+  }>
 ): string {
   const lines: string[] = [];
 
   // Add header
-  lines.push('Name,Role,Preference,Group');
+  lines.push("Name,Role,Preference,Group");
 
   // Add room assignments
   for (const room of rooms) {
@@ -167,19 +218,14 @@ export function convertResultsToCSV(
         assignment.name,
         assignment.role,
         assignment.preference.toString(),
-        assignment.group || ''
+        assignment.group || "",
       ];
-      lines.push(row.join(','));
+      lines.push(row.join(","));
     }
-    lines.push(''); // Empty line between rooms
+    lines.push(""); // Empty line between rooms
   }
 
-  // Add statistics at the end
-  lines.push('');
-  lines.push(`Total Preference,${totalPreference}`);
-  lines.push(`Average Preference,${averagePreference}`);
-
-  return lines.join('\n');
+  return lines.join("\n");
 }
 
 /**
@@ -189,13 +235,13 @@ export function convertResultsToCSV(
  * @param filename - Name of the file to download
  */
 export function downloadCSV(content: string, filename: string): void {
-  const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
+  const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
   const url = URL.createObjectURL(blob);
 
-  link.setAttribute('href', url);
-  link.setAttribute('download', filename);
-  link.style.visibility = 'hidden';
+  link.setAttribute("href", url);
+  link.setAttribute("download", filename);
+  link.style.visibility = "hidden";
 
   document.body.appendChild(link);
   link.click();
